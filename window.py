@@ -59,5 +59,9 @@ class Button:
         img.fill(self.bg_color)
         self.text_render = self.font.render(self.text, True, self.text_color)
         surface.blit(img, self.rect)
+        
+        # Draw white outline
+        pygame.draw.rect(surface, (255, 255, 255), self.rect, 2)
+        
         surface.blit(self.text_render, (self.rect.x + self.rect.width // 2 - self.text_render.get_width() // 2, self.rect.y + self.rect.height // 2 - self.text_render.get_height() // 2))
 
