@@ -1,7 +1,7 @@
 import pygame 
 
 class Animation:
-    def __init__(self, spritesheet, num_frames):
+    def __init__(self, spritesheet, num_frames, frame_size=135):
         self.frames = []
         self.num_frames = num_frames
         self.current_frame = 0
@@ -13,7 +13,7 @@ class Animation:
         spritesheet = pygame.image.load(spritesheet)
 
         for i in range(num_frames):
-            frame = pygame.Surface.subsurface(spritesheet, ((i*135, 0), (135, 135)))
+            frame = pygame.Surface.subsurface(spritesheet, ((i*frame_size, 0), (frame_size, frame_size)))
             self.frames.append(frame)
 
         self.image = self.frames[self.current_frame]

@@ -28,7 +28,7 @@ class Hitbox:
         print(f"Hit unit {unit} for {self.damage} damage")
         print("Unit hit")
 
-        if self.rect.centerx < unit.rect.centerx:
+        if self.unit.rect.centerx < unit.rect.centerx:
             unit.knockback_dx += 20
             print("knocked back")
         else:
@@ -79,3 +79,13 @@ class Hitbox:
         if self.draw_hitbox:
             # surface.blit(self.image, self.rect)
             pass
+
+class PlayerAttack1Hitbox(Hitbox):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
+        # You can add player-specific hitbox logic here
+
+class SkeletonAttackHitbox(Hitbox):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
+        # You can add skeleton-specific hitbox logic here

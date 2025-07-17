@@ -3,6 +3,7 @@
 import pygame 
 from animation import Animation
 from action import Hitbox
+from action import PlayerAttack1Hitbox, SkeletonAttackHitbox
 
 
 class Unit:
@@ -80,62 +81,81 @@ class Unit:
         self.target_unit = None
 
     def update(self):
-
-
         # animations 
-
         self.determine_image()
 
         image = self.anims[self.current_anim].image
         if not self.facing_right:
-            
             self.image = pygame.transform.scale(pygame.transform.flip(image, True, False), (image.get_width() * self.scale, image.get_height() * self.scale))
-
         else:
             self.image = pygame.transform.scale(image, (image.get_width() * self.scale, image.get_height() * self.scale))
 
-
         self.anims[self.current_anim].update()
-
 
         if self.is_dead():
             return
-        
+
+        # Always process knockback and dx/dy
+        if self.knockback_dx > 0:
+            self.dx += self.knockback_dx
+            self.knockback_dx -= 1
+        if self.knockback_dx < 0:
+            self.dx += self.knockback_dx
+            self.knockback_dx += 1
+
+        # Block voluntary actions while staggered (stunned)
+        if self.staggered:
+            self.move()
+            return
+
+        # For skeleton, spawn hitbox on the 7th frame of attack
+        if isinstance(self, Skeleton) and getattr(self, 'skeleton_hitbox_pending', False):
+            if self.current_anim == 2 and self.attack_anim.current_frame == 6 and not getattr(self, 'skeleton_hitbox_spawned', False):
+                hitbox = SkeletonAttackHitbox(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
+                hitbox.unit = self
+                self.enc.add_element(hitbox)
+                self.skeleton_hitbox_spawned = True
+            # Reset flags when attack animation is done or changes
+            if self.current_anim != 2 or self.attack_anim.complete():
+                self.skeleton_hitbox_pending = False
+                self.skeleton_hitbox_spawned = False
+
         if self.attack_cd > 0:
             self.attack_cd -= 1
 
+        # Remove: Always face the target if there is one
+        # Facing will be set based on voluntary movement below
+
         if self.target_unit and self.knockback_dx == 0:
-            
-            right_side = True
-            test_rect = pygame.Rect(self.rect.x, self.rect.y, 50, 100)
-            if self.rect.x > self.target_unit.rect.x:
-                right_side = True
+            # Simulate the attack hitbox position
+            hitbox_width = 50 * self.scale
+            hitbox_height = 100 * self.scale
+            hitbox_rect = pygame.Rect(0, 0, hitbox_width, hitbox_height)
+            if self.facing_right:
+                hitbox_rect.bottomleft = self.rect.bottomright
             else:
-                right_side = False
+                hitbox_rect.bottomright = self.rect.bottomleft
 
-            if right_side:
-                test_rect.midright = self.rect.midleft
-            else:
-                test_rect.midleft = self.rect.midright
-            
-            if not test_rect.colliderect(self.target_unit.rect):
-                if right_side:
+            # Check if the hitbox would hit the target
+            if not hitbox_rect.colliderect(self.target_unit.rect):
+                # Move towards the target if not in range
+                if self.facing_right:
                     self.set_target_location(self.target_unit.rect.bottomright[0] + 25, self.target_unit.rect.bottomright[1])
-
                 else:
                     self.set_target_location(self.target_unit.rect.bottomleft[0] - 25, self.target_unit.rect.bottomleft[1])
-                
             else:
-                self.attack(not right_side)
-                
- 
+                self.attack(self.facing_right)
+
+        voluntary_dx = 0  # Track voluntary movement in x
+
         if self.is_moving and self.target_location:
             current = pygame.Vector2(self.rect.midbottom)
             target = pygame.Vector2(self.target_location)
             direction = target - current
             distance = direction.length()
             if distance <= self.speed:
-                self.dx += target.x - current.x
+                voluntary_dx = target.x - current.x
+                self.dx += voluntary_dx
                 self.dy += target.y - current.y
                 self.is_moving = False
                 self.target_location = None
@@ -143,17 +163,17 @@ class Unit:
             else:
                 direction.normalize_ip()
                 move_vector = direction * self.speed
+                voluntary_dx = move_vector.x
                 print(move_vector)
                 self.dx += move_vector.x
                 self.dy += move_vector.y
         
-        if self.knockback_dx > 0:
-            self.dx += self.knockback_dx
-            self.knockback_dx -= 1
-        if self.knockback_dx < 0:
-            self.dx += self.knockback_dx
-            self.knockback_dx += 1
-        
+        # Determine facing based on voluntary_dx (voluntary movement in x)
+        if voluntary_dx > 0:
+            self.facing_right = True
+        elif voluntary_dx < 0:
+            self.facing_right = False
+
         self.move()
 
     def move(self):
@@ -213,19 +233,12 @@ class Unit:
 
 
     def set_target_location(self, x, y):
-
         if y < self.enc.y_bound:
             y = self.enc.y_bound
-
         self.target_location = (x, y)
         self.is_moving = True
         print("Setting target location: ", self.target_location)
-
-        if self.target_location:
-            if self.rect.x < self.target_location[0]:
-                self.facing_right = True
-            else:
-                self.facing_right = False
+        # Remove facing logic here; facing is now set by movement
 
 
     def is_dead(self):
@@ -237,16 +250,27 @@ class Unit:
             self.hp = 0
         
         self.staggered = True
+        # Cancel all actions when hit
+        self.attacking = False
+        self.is_moving = False
+        self.target_location = None
+        # Optionally reset attack animation if in progress
+        if self.current_anim == 2:
+            self.anims[self.current_anim].reset()
         print(f"Unit took {damage} damage")
 
     def attack(self, right_side=True):
         if self.attack_cd > 0:
             return
-        hitbox = Hitbox(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
-
-        hitbox.unit = self
-        self.enc.add_element(hitbox)
-
+        # Use different hitbox classes for player and skeleton
+        if isinstance(self, Skeleton):
+            # For skeleton, set a flag to spawn hitbox on the 7th frame
+            self.skeleton_hitbox_pending = True
+            self.skeleton_hitbox_spawned = False
+        else:
+            hitbox = PlayerAttack1Hitbox(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
+            hitbox.unit = self
+            self.enc.add_element(hitbox)
         self.attack_cd = self.attack_setcd
         self.attacking = True
     
@@ -303,4 +327,28 @@ class Unit:
 
         surface.blit(self.healthbar_bot, self.healthbar_rect)
         surface.blit(self.healthbar_top, self.healthbar_rect)
+
+
+class Skeleton(Unit):
+    def __init__(self):
+        super().__init__()
+        # Override animations with Skeleton-specific ones
+        self.idle_anim = Animation("resalt/monster_sprites/Skeleton/Idle.png", 4, frame_size=150)
+        self.run_anim = Animation("resalt/monster_sprites/Skeleton/Walk.png", 4, frame_size=150)  # 'run' for Unit is 'walk' for Skeleton
+        self.attack_anim = Animation("resalt/monster_sprites/Skeleton/Attack.png", 8, frame_size=150)
+        self.attack_anim.repeat = False
+        self.hit_anim = Animation("resalt/monster_sprites/Skeleton/Take Hit.png", 4, frame_size=150)
+        self.death_anim = Animation("resalt/monster_sprites/Skeleton/Death.png", 4, frame_size=150)
+        self.death_anim.repeat = False
+
+        self.anims = [
+            self.idle_anim,
+            self.run_anim,
+            self.attack_anim,
+            self.hit_anim,
+            self.death_anim
+        ]
+        self.current_anim = 0
+        self.image = self.anims[self.current_anim].image
+        # Enemy AI: Skeleton uses the same AI logic as Unit (targeting, attacking, etc.)
 

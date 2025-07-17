@@ -5,7 +5,6 @@ from main_menu import MainMenu
 from encounter import Encounter
 
 
-
 class Game:
     def __init__(self, width=1200, height=800):
         self.width = width

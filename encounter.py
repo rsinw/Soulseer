@@ -3,7 +3,8 @@
 import pygame
 from window import Window, Button
 from animation import Animation
-from unit import Unit 
+from unit import Unit
+from unit import Skeleton
 
 
 class Encounter(Window):
@@ -17,8 +18,8 @@ class Encounter(Window):
         self.units = [[], [], []]
         self.selected_unit = None
 
-        self.add_unit(Unit(), 0)
-        self.add_unit(Unit(), 1)
+        self.add_unit(Unit(), 0)  # Add player unit back
+        self.add_unit(Skeleton(), 1)  # Keep Skeleton as the enemy
 
         self.elements[1].set_target_unit(self.elements[0])
 
