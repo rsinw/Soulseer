@@ -157,11 +157,16 @@ class Encounter(Window):
                
 
 
+    def get_elements_by_y_order(self):
+        # Returns elements sorted from highest to lowest midbottom.y
+        return sorted(self.elements, key=lambda e: getattr(e, 'rect', None) and getattr(e.rect, 'midbottom', (0,0))[1] or 0)
+
     def draw(self):
         
         self.game.screen.blit(self.bg_image, (0,0))
-        super().draw()
-
+        # Draw elements in y-order
+        for element in self.get_elements_by_y_order():
+            element.draw(self.game.screen)
         if self.over:
             self.game.screen.blit(self.over_text, (400,200))
        

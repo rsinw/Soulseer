@@ -2,8 +2,7 @@
 
 import pygame 
 from animation import Animation
-from action import Hitbox
-from action import PlayerAttack1Hitbox, SkeletonAttackHitbox
+from action import *
 
 
 class Unit:
@@ -81,6 +80,11 @@ class Unit:
         self.target_unit = None
 
     def update(self):
+        # Remove all attack actions belonging to this unit if staggered
+        if getattr(self, 'staggered', False) and hasattr(self, 'enc'):
+            for element in list(self.enc.elements):
+                if hasattr(element, 'unit') and hasattr(element, 'remove') and element.unit is self:
+                    element.remove = True
         # animations 
         self.determine_image()
 
@@ -109,16 +113,6 @@ class Unit:
             return
 
         # For skeleton, spawn hitbox on the 7th frame of attack
-        if isinstance(self, Skeleton) and getattr(self, 'skeleton_hitbox_pending', False):
-            if self.current_anim == 2 and self.attack_anim.current_frame == 6 and not getattr(self, 'skeleton_hitbox_spawned', False):
-                hitbox = SkeletonAttackHitbox(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
-                hitbox.unit = self
-                self.enc.add_element(hitbox)
-                self.skeleton_hitbox_spawned = True
-            # Reset flags when attack animation is done or changes
-            if self.current_anim != 2 or self.attack_anim.complete():
-                self.skeleton_hitbox_pending = False
-                self.skeleton_hitbox_spawned = False
 
         if self.attack_cd > 0:
             self.attack_cd -= 1
@@ -252,6 +246,11 @@ class Unit:
         self.attacking = False
         self.is_moving = False
         self.target_location = None
+        # Remove all attack actions belonging to this unit
+        from action import Action
+        for element in list(self.enc.elements):
+            if isinstance(element, Action) and getattr(element, 'unit', None) is self:
+                element.remove = True
         # Optionally reset attack animation if in progress
         if self.current_anim == 2:
             self.anims[self.current_anim].reset()
@@ -268,11 +267,11 @@ class Unit:
             return
         # Use different hitbox classes for player and skeleton
         if isinstance(self, Skeleton):
-            # For skeleton, set a flag to spawn hitbox on the 7th frame
-            self.skeleton_hitbox_pending = True
-            self.skeleton_hitbox_spawned = False
+            hitbox = SkeletonAttackAction(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
+            hitbox.unit = self
+            self.enc.add_element(hitbox)
         else:
-            hitbox = PlayerAttack1Hitbox(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
+            hitbox = PlayerAttack1Action(self.rect.x, self.rect.y, 50*self.scale, 100*self.scale)
             hitbox.unit = self
             self.enc.add_element(hitbox)
         self.attack_cd = self.attack_setcd

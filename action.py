@@ -1,6 +1,6 @@
 import pygame 
 
-class Hitbox:
+class Action:
     def __init__(self, x, y, width, height):
         self.rect = None
 
@@ -82,15 +82,34 @@ class Hitbox:
             # surface.blit(self.image, self.rect)
             pass
 
-class PlayerAttack1Hitbox(Hitbox):
+class SingleHitAttackAction(Action):
+    def __init__(self, x, y, width, height):
+        self.damage = 0
+        self.wait = 0 
+        self.units_hit = set()
+
+        self.frames = 0
+        self.frame_duration = 10
+        self.attack_frame = 0
+        self.wait = self.frame_duration * self.attack_frame
+
+        self.remove = False
+         self.draw_hitbox = False
+        
+        # You can add player-specific hitbox logic here
+
+
+class PlayerAttack1Action(Action):
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height)
         # You can add player-specific hitbox logic here
 
-class SkeletonAttackHitbox(Hitbox):
+class SkeletonAttackAction(Action):
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height)
         # You can add skeleton-specific hitbox logic here
 
         self.damage = 5
+
+        self.wait = 70
     
