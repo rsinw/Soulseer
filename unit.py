@@ -181,8 +181,6 @@ class Unit:
         current = pygame.Vector2(self.rect.midbottom)
         new_pos = current + pygame.Vector2(self.dx, self.dy)
         
-        if new_pos.x < 0 or new_pos.x > self.enc.x_bound:
-            self.dx = 0
         if new_pos.y < self.enc.y_bound or new_pos.y > self.enc.game.screen.get_height():
             self.dy = 0
 
@@ -258,6 +256,12 @@ class Unit:
         if self.current_anim == 2:
             self.anims[self.current_anim].reset()
         print(f"Unit took {damage} damage")
+    
+    def heal(self, amount):
+        self.hp += amount
+        if self.hp > self.max_hp:
+            self.hp = self.max_hp
+        print(f"Unit healed {amount} hp")
 
     def attack(self, right_side=True):
         if self.attack_cd > 0:
@@ -309,10 +313,12 @@ class Unit:
         temp_rect.x += self.offsetx
         temp_rect.y += self.offsety
 
-
-
         # draw unit
         surface.blit(self.image, temp_rect)
+
+        # Only draw healthbar if not dead
+        if self.is_dead():
+            return
 
         self.healthbar_rect = pygame.Rect(self.rect.x, self.rect.y - 10, self.rect.width, 5)
         self.healthbar_rect.midbottom = self.rect.midtop
@@ -332,6 +338,10 @@ class Unit:
 class Skeleton(Unit):
     def __init__(self):
         super().__init__()
+        self.hp = 50
+        self.max_hp = 50
+
+        self.speed = 1
         # Override animations with Skeleton-specific ones
         self.idle_anim = Animation("resalt/monster_sprites/Skeleton/Idle.png", 4, frame_size=150)
         self.run_anim = Animation("resalt/monster_sprites/Skeleton/Walk.png", 4, frame_size=150)  # 'run' for Unit is 'walk' for Skeleton

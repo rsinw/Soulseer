@@ -29,11 +29,13 @@ class Hitbox:
         print("Unit hit")
 
         if self.unit.rect.centerx < unit.rect.centerx:
-            unit.knockback_dx += 20
+            unit.knockback_dx += 5
             print("knocked back")
         else:
-            unit.knockback_dx -= 20
+            unit.knockback_dx -= 5
             print("knocked back")
+        
+        self.unit.heal(10)
 
         pass
 
@@ -89,3 +91,6 @@ class SkeletonAttackHitbox(Hitbox):
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height)
         # You can add skeleton-specific hitbox logic here
+
+        self.damage = 5
+    
