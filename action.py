@@ -94,10 +94,9 @@ class SingleHitAttackAction(Action):
         self.wait = self.frame_duration * self.attack_frame
 
         self.remove = False
-         self.draw_hitbox = False
+        self.draw_hitbox = False
         
-        # You can add player-specific hitbox logic here
-
+        # You can add player-specific hitbox logic her
 
 class PlayerAttack1Action(Action):
     def __init__(self, x, y, width, height):

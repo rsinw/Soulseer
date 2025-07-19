@@ -36,8 +36,6 @@ class Encounter(Window):
 
         self.bg_image = pygame.transform.scale(pygame.image.load("resalt/mansion2.png"), (1200, 800))
 
-        self.selected_unit.rect.midbottom = (100, 600)
-
         self.over = False
         self.over_timer = 300
         self.side_win = None
@@ -64,7 +62,7 @@ class Encounter(Window):
 
         if side == 0:
             # Spawn player in the middle of the screen
-            unit.rect.midbottom = (self.x_bound // 2, max_y)
+            unit.rect.midbottom = (1200 // 2, 800 //2 +(400 // 2))
         else:
             # Randomly choose left or right offscreen
             spawn_side = random.choice(['left', 'right'])
