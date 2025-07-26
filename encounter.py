@@ -154,6 +154,39 @@ class Encounter(Window):
             if unit.is_alive():
                 return True 
         return False
+    def draw_action_ui(self, surface):
+        if not self.selected_unit:
+            return
+
+        spacing = 10
+        square_size = (100,100)
+        x_start = 10
+        y_start = 10
+
+        for i, action in enumerate(self.selected_unit.actions):
+            x = x_start + i * (square_size[0] + spacing)
+            y = y_start
+
+            # Draw the action image
+
+            image = pygame.transform.scale(action.image, square_size)
+            surface.blit(image, (x, y))
+
+            # Draw white border
+            pygame.draw.rect(surface, (255, 255, 255), (x, y, *square_size), width=2)
+
+            # Cooldown overlay (top-to-bottom vertical fill)
+            if action.working_cd > 0:
+                cd_ratio = action.working_cd / action.cd
+                overlay_height = int(square_size[1] * cd_ratio)
+
+                # Create full transparent gray overlay
+                overlay = pygame.Surface((square_size[0], overlay_height), pygame.SRCALPHA)
+                overlay.fill((100, 100, 100, 150))  # 150 alpha = semi-transparent gray
+
+                # Blit only top portion
+                surface.blit(overlay, (x, y))
+
 
     def draw(self):
         
@@ -161,6 +194,7 @@ class Encounter(Window):
         # Draw elements in y-order
         for element in self.get_elements_by_y_order():
             element.draw(self.game.screen)
+        self.draw_action_ui(self.game.screen)
         if self.over:
             self.game.screen.blit(self.over_text, (400,200))
        

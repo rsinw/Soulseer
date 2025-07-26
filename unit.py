@@ -24,8 +24,7 @@ class Unit:
 
         self.speed = 2
 
-        self.attack_setcd = 40
-        self.attack_cd = 0
+        self.haste = 1
 
         # movement 
         self.dx = 0
@@ -50,8 +49,6 @@ class Unit:
 
         self.idle_anim = Animation("resalt/Sprites/Idle.png", 10)
         self.move_anim = Animation("resalt/Sprites/Run.png", 6)
-        self.attack_anim = Animation("resalt/Sprites/Attack1.png", 4)
-        self.attack_anim.repeat = False
 
         self.hit_anim = Animation("resalt/Sprites/Get Hit.png", 3)
         self.death_anim = Animation("resalt/Sprites/Death.png", 9)
@@ -60,11 +57,20 @@ class Unit:
         self.anims = [
             self.idle_anim,
             self.move_anim,
-            self.attack_anim,
             self.death_anim
         ]
 
-        
+        self.action0 = Action(self)
+        self.action1 = Action(self)
+        self.action2 = Action(self)
+        self.action3 = Action(self)
+
+        self.actions = [
+            self.action0,
+            self.action1,
+            self.action2,
+            self.action3,
+        ]
 
         self.current_anim = self.idle_anim
         self.image = self.current_anim.image
@@ -93,19 +99,36 @@ class Unit:
         self.healthbar_bot = pygame.Surface((self.rect.width, 5))
         self.healthbar_bot.fill((255, 0, 0))
     
+    def cancel_action(self):
+        if self.action:
+            self.action.reset()
+            self.action.working_cd = 0
+            self.action = None 
+
     def set_action(self, action):
         self.action = action
+        self.action.reset()
 
     def update(self):
         # Remove all attack actions belonging to this unit if staggered
         voluntary_dx = 0  # Track voluntary movement in x
+
+        if self.action:
+            if self.action.complete:
+                self.action.reset()
+                self.action = None 
+        
+        for action in self.actions:
+            if action.working_cd > 0:
+                action.working_cd -= 1 
+                
 
         if self.is_dead():
             self.remove_timer += 1 
             if self.remove_timer > 3000:
                 self.remove == True 
             
-            self.action = None 
+            self.cancel_action()
             self.switch_anim(self.death_anim)
         
         elif self.target_unit or self.target_location:
@@ -139,7 +162,6 @@ class Unit:
                     self.dx += voluntary_dx
                     self.dy += target.y - current.y
                     self.target_location = None
-                    print("Arrived at target location")
                 else:
                     direction.normalize_ip()
                     move_vector = direction * self.speed
@@ -148,26 +170,19 @@ class Unit:
                     self.dx += move_vector.x
                     self.dy += move_vector.y
 
-            self.action = None 
+            self.cancel_action()
             self.switch_anim(self.move_anim)
-            print("swtiched to move anim")
   
         
         elif self.action:
             self.action.update()
-            self.swtich_anim(self.action.anim)
         
 
         else:
             self.switch_anim(self.idle_anim)
-            print("switched to idel anim")
 
 
-        # For skeleton, spawn hitbox on the 7th frame of attack
-
-        if self.attack_cd > 0:
-            self.attack_cd -= 1
-
+        # For skeleton, spawn hitbox on the 7th frame of attac
 
         # Always process knockback and dx/dy
         if self.knockback_dx > 0:
@@ -190,8 +205,8 @@ class Unit:
             self.image = pygame.transform.scale(pygame.transform.flip(image, True, False), (image.get_width() * self.scale, image.get_height() * self.scale))
         else:
             self.image = pygame.transform.scale(image, (image.get_width() * self.scale, image.get_height() * self.scale))
+
         self.move()
-        print("update end")
 
     def switch_anim(self, new_anim):
         if self.current_anim == new_anim:
@@ -221,8 +236,7 @@ class Unit:
         if y < self.enc.y_bound:
             y = self.enc.y_bound
         self.target_location = (x, y)
-        print("Setting target location: ", self.target_location)
-        # Remove facing logic here; facing is now set by movement
+
 
 
     def is_alive(self):
@@ -255,14 +269,16 @@ class Unit:
         if self.hp > self.max_hp:
             self.hp = self.max_hp
         print(f"Unit healed {amount} hp")
-
-    def attack(self, right_side=True):
-        print("Attack pressed")
-        self.attack_cd = self.attack_setcd
+    
     
     def control(self):
 
         x, y = pygame.mouse.get_pos()
+
+        action_keys = [pygame.K_q,
+                       pygame.K_w,
+                       pygame.K_e,
+                       pygame.K_r]
 
         for event in self.enc.game.events:
             if pygame.mouse.get_pressed()[0]:
@@ -279,13 +295,19 @@ class Unit:
 
             if event.type == pygame.KEYDOWN:
             
-                if event.key == pygame.K_a:
-                    if x < self.rect.x:
-                        self.attack(0)
-                    else:
-                        self.attack(1)
+                if event.key == pygame.K_q:
+                    if self.actions[0].working_cd == 0:
+                        self.action = self.actions[0]
 
-                    print("attacking")
+                    print("Action 0 pressed")
+            
+                for index, key in enumerate(action_keys):
+                    if event.key == key:
+                        if self.actions[index].working_cd == 0:
+                            self.actions[index].working_cd = self.actions[index].cd
+                            self.action = self.actions[index]
+                            
+
     
     def draw(self, surface):
 
@@ -298,6 +320,27 @@ class Unit:
 
         # draw unit
         surface.blit(self.image, temp_rect)
+
+         
+        #overlay 
+        mask = pygame.mask.from_surface(self.image)
+
+        # Get the outline as a list of points
+        outline = mask.outline()
+
+        if not outline:
+            return  # No visible pixels
+
+        # Adjust position to where the image is drawn on screen
+        temp_rect = self.rect.copy()
+        temp_rect.x += self.offsetx
+        temp_rect.y += self.offsety
+
+        # Offset the outline points to screen position
+        offset_outline = [(x + temp_rect.x, y + temp_rect.y) for x, y in outline]
+
+        # Draw the green outline
+        pygame.draw.lines(surface, (0, 255, 0), True, offset_outline, 1)
 
         # Only draw healthbar if not dead
         if self.is_dead():

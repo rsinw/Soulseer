@@ -1,31 +1,57 @@
 import pygame 
-
+from animation import *
 
 
 class Action:
 
     def __init__(self, unit):
         self.unit = unit
-        self.anim = None
-        self.duration = 0 
+        
+       
+        self.anim = self.attack_anim = Animation("resalt/Sprites/Attack1.png", 4)
+        self.anim.repeat = False 
+        self.image = pygame.image.load("resalt/ability_sprites/player_slash.png")        # Create 100x100 surface 
+
+        self.complete = False 
+
+        self.duration = 1 * unit.haste
+        self.real_duration = 0 
+        self.working_duration = 0
+
+        self.init_duration()
+
+        self.working_cd = 0
+        self.cd = 5 * 60 
+
+    
 
     def update(self):
-
- 
-        pass 
+        self.anim.update()
+        self.unit.switch_anim(self.anim)
+        if self.anim.complete():
+            self.complete = True 
+    
+    def reset(self):
+        self.complete = False 
+        self.anim.reset()
 
     def get_speed(self):
         return self.anim.num_frames * self.anim.frame_duration
     
-    def initialize_duration(self, duration):
-        frames = duration * 60 
+    def init_duration(self):
+        frames = self.duration * 60 
         frame_duration = frames // self.anim.num_frames 
+        if frame_duration <= 0:
+            frame_duration = 1 
 
         self.anim.frame_duration = frame_duration
 
+        self.real_duration = frame_duration * self.anim.num_frames
 
-    def get_image(self):
-        return self.anim.image
+
+class actionPlayerSlash(Action):
+    pass
+
     
 class Hitbox:
     def __init__(self, x, y, width, height):
