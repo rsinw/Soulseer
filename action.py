@@ -1,6 +1,33 @@
 import pygame 
 
+
+
 class Action:
+
+    def __init__(self, unit):
+        self.unit = unit
+        self.anim = None
+        self.duration = 0 
+
+    def update(self):
+
+ 
+        pass 
+
+    def get_speed(self):
+        return self.anim.num_frames * self.anim.frame_duration
+    
+    def initialize_duration(self, duration):
+        frames = duration * 60 
+        frame_duration = frames // self.anim.num_frames 
+
+        self.anim.frame_duration = frame_duration
+
+
+    def get_image(self):
+        return self.anim.image
+    
+class Hitbox:
     def __init__(self, x, y, width, height):
         self.rect = None
 
@@ -9,18 +36,16 @@ class Action:
         self.units_hit = set()
 
         self.damage = 10
-
-        self.duration = 10
-        self.remove = False
-        
-        self.wait = 20
-
         self.draw_hitbox = False
 
         self.unit = None
         self.width = width
         self.height = height
     
+    # element marker for enc 
+
+        self.remove = False
+
 
     def on_hit(self, unit):
 
@@ -63,14 +88,15 @@ class Action:
             
         
         self.draw_hitbox = True
+
+
         
-        for group in self.enc.units:
-            for element in group:
-                if element.side == self.unit.side:
-                    continue
-                if self.rect.colliderect(element.rect) and element not in self.units_hit:
-                    self.on_hit(element)
-                    self.units_hit.add(element)
+        for unit in self.enc.units:
+            if unit.side == self.unit.side:
+                continue
+            if self.rect.colliderect(unit.rect) and unit not in self.units_hit:
+                self.on_hit(unit)
+                self.units_hit.add(unit)
 
         self.duration -= 1
 
@@ -82,7 +108,9 @@ class Action:
             # surface.blit(self.image, self.rect)
             pass
 
-class SingleHitAttackAction(Action):
+
+'''
+class SingleHitAttackHitbox(Hitbox):
     def __init__(self, x, y, width, height):
         self.damage = 0
         self.wait = 0 
@@ -112,3 +140,4 @@ class SkeletonAttackAction(Action):
 
         self.wait = 70
     
+'''

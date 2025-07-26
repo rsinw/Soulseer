@@ -23,7 +23,6 @@ class Game:
         self.windows.append(window)
         window.game = self 
 
-
     # windows
 
     def start_encounter(self):
