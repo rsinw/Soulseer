@@ -10,6 +10,9 @@ class Game:
         self.width = width
         self.height = height
         self.screen = pygame.display.set_mode((width, height))
+        icon_image = pygame.image.load("resalt/soulseer_icon.png")
+        pygame.display.set_icon(icon_image)
+        pygame.display.set_caption("soulseer")
         self.running = True
         self.clock = pygame.time.Clock()
         self.fps = 60   

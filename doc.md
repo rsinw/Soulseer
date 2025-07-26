@@ -37,3 +37,10 @@ set the working list as the temp list
 Animation is loaded 
 actual images are put into list 
 
+
+
+
+Action 
+
+(in update)
+if action.anim

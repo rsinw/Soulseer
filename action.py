@@ -10,7 +10,7 @@ class Action:
        
         self.anim = self.attack_anim = Animation("resalt/Sprites/Attack1.png", 4)
         self.anim.repeat = False 
-        self.image = pygame.image.load("resalt/ability_sprites/player_slash.png")        # Create 100x100 surface 
+        self.image = pygame.image.load("resalt/ability_sprites/slash1.png")        # Create 100x100 surface 
 
         self.complete = False 
 

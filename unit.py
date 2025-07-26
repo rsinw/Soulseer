@@ -61,15 +61,23 @@ class Unit:
         ]
 
         self.action0 = Action(self)
+        self.action0.image = pygame.image.load("resalt/ability_sprites/slash1.png")
+        
+
         self.action1 = Action(self)
+        self.action1.image = pygame.image.load("resalt/ability_sprites/slash2.png")
+        self.action1.anim = Animation("resalt/Sprites/Attack2.png", 4)
+
         self.action2 = Action(self)
-        self.action3 = Action(self)
+        self.action2.image = pygame.image.load("resalt/ability_sprites/slash3.png")
+        self.action2.anim = Animation("resalt/Sprites/Attack3.png", 5)
+
+       
 
         self.actions = [
             self.action0,
             self.action1,
             self.action2,
-            self.action3,
         ]
 
         self.current_anim = self.idle_anim
@@ -295,15 +303,9 @@ class Unit:
 
             if event.type == pygame.KEYDOWN:
             
-                if event.key == pygame.K_q:
-                    if self.actions[0].working_cd == 0:
-                        self.action = self.actions[0]
-
-                    print("Action 0 pressed")
-            
                 for index, key in enumerate(action_keys):
                     if event.key == key:
-                        if self.actions[index].working_cd == 0:
+                        if self.actions[index].working_cd == 0 and not self.action:
                             self.actions[index].working_cd = self.actions[index].cd
                             self.action = self.actions[index]
                             
